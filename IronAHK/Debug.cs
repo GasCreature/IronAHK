@@ -6,9 +6,9 @@ using System.Security;
 
 namespace IronAHK
 {
-    partial class Program
-    {
-        const bool debug =
+	partial class Program
+	{
+		private const bool debug =
 #if DEBUG
  true
 #else
@@ -16,23 +16,23 @@ namespace IronAHK
 #endif
 ;
 
-        [SuppressUnmanagedCodeSecurityAttribute]
-        internal static class SafeNativeMethods
-        {
-            [DllImport("kernel32.dll")]
-            internal static extern bool AllocConsole();
-        }
+		[SuppressUnmanagedCodeSecurityAttribute]
+		internal static class SafeNativeMethods
+		{
+			[DllImport("kernel32.dll")]
+			internal static extern bool AllocConsole();
+		}
 
-        [Conditional("DEBUG")]
-        static void Start(ref string[] args)
-        {
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                SafeNativeMethods.AllocConsole();
+		[Conditional("DEBUG")]
+		private static void Start(ref string[] args)
+		{
+			if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+				SafeNativeMethods.AllocConsole();
 
-            const string source = "..{0}..{0}..{0}Tests{0}Code{0}isolated.ahk";
-            const string binary = "test.exe";
+			const string source = "..{0}..{0}..{0}Tests{0}Code{0}isolated.ahk";
+			const string binary = "test.exe";
 
-            args = string.Format(source + " --out " + binary, Path.DirectorySeparatorChar).Split(' ');
-        }
-    }
+			args = string.Format(source + " --out " + binary, Path.DirectorySeparatorChar).Split(' ');
+		}
+	}
 }

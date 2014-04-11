@@ -1,11 +1,10 @@
-﻿
-namespace IronAHK.Scripting
+﻿namespace IronAHK.Scripting
 {
-    partial class Parser
-    {
-        const string Legacy = "LEGACY";
+	partial class Parser
+	{
+		private const string Legacy = "LEGACY";
 
-        const bool LaxExpressions =
+		private const bool LaxExpressions =
 #if LEGACY
  true
 #endif
@@ -14,10 +13,10 @@ namespace IronAHK.Scripting
 #endif
 ;
 
-        const bool LegacyIf = LaxExpressions;
+		private const bool LegacyIf = LaxExpressions;
 
-        const bool LegacyLoop = LaxExpressions;
+		private const bool LegacyLoop = LaxExpressions;
 
-        bool DynamicVars = LaxExpressions;
-    }
+		private bool DynamicVars = LaxExpressions;
+	}
 }

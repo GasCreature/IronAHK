@@ -5,109 +5,109 @@ using System.IO;
 
 namespace IronAHK.Scripting
 {
-    partial class Emit
-    {
-        #region Properties
+	partial class Emit
+	{
+		#region Properties
 
-        TextWriter writer;
-        CodeGeneratorOptions options;
-        int depth;
+		private TextWriter writer;
+		private CodeGeneratorOptions options;
+		private int depth;
 
-        #endregion
+		#endregion Properties
 
-        #region Constructor
+		#region Constructor
 
-        public Emit(TextWriter writer, CodeGeneratorOptions options, int depth)
-        {
-            this.writer = writer;
-            this.options = options;
-            this.depth = depth;
-        }
+		public Emit(TextWriter writer, CodeGeneratorOptions options, int depth)
+		{
+			this.writer = writer;
+			this.options = options;
+			this.depth = depth;
+		}
 
-        #endregion
+		#endregion Constructor
 
-        #region Extra
+		#region Extra
 
-        public void Convert(CodeObject code)
-        {
-            if (code is CodeCompileUnit)
-            {
-                foreach (CodeTypeMember member in ((CodeCompileUnit)code).Namespaces[0].Types[0].Members)
-                {
-                    if (member is CodeEntryPointMethod)
-                        EmitStatements(((CodeEntryPointMethod)member).Statements);
-                    else
-                        EmitMethod((CodeMemberMethod)member);
-                }
-            }
-            else if (code is CodeEntryPointMethod || code is CodeMemberMethod)
-                EmitMethod((CodeMemberMethod)code);
-            else if (code is CodeStatement)
-                EmitStatement((CodeStatement)code);
+		public void Convert(CodeObject code)
+		{
+			if (code is CodeCompileUnit)
+			{
+				foreach (CodeTypeMember member in ((CodeCompileUnit) code).Namespaces[0].Types[0].Members)
+				{
+					if (member is CodeEntryPointMethod)
+						EmitStatements(((CodeEntryPointMethod) member).Statements);
+					else
+						EmitMethod((CodeMemberMethod) member);
+				}
+			}
+			else if (code is CodeEntryPointMethod || code is CodeMemberMethod)
+				EmitMethod((CodeMemberMethod) code);
+			else if (code is CodeStatement)
+				EmitStatement((CodeStatement) code);
 
-            writer.WriteLine();
-        }
+			writer.WriteLine();
+		}
 
-        void WriteSpace()
-        {
-            writer.WriteLine();
-            
-            for (int i = 0; i < depth; i++)
-                writer.Write(options.IndentString);
-        }
+		private void WriteSpace()
+		{
+			writer.WriteLine();
 
-        #endregion
+			for (int i = 0; i < depth; i++)
+				writer.Write(options.IndentString);
+		}
 
-        #region Statements
+		#endregion Extra
 
-        void EmitStatements(CodeStatementCollection statements)
-        {
-            foreach (CodeStatement statement in statements)
-            {
-                WriteSpace();
-                EmitStatement(statement);
-            }
-        }
+		#region Statements
 
-        void EmitStatement(CodeStatement statement)
-        {
-            if (statement is CodeAssignStatement)
-                EmitAssignment((CodeAssignStatement)statement);
-            else if (statement is CodeExpressionStatement)
-                EmitExpressionStatement(((CodeExpressionStatement)statement).Expression);
-            else if (statement is CodeIterationStatement)
-                EmitIteration((CodeIterationStatement)statement);
-            else if (statement is CodeConditionStatement)
-                EmitConditionStatement((CodeConditionStatement)statement);
-            else if (statement is CodeGotoStatement)
-                EmitGoto((CodeGotoStatement)statement);
-            else if (statement is CodeLabeledStatement)
-                EmitLabel((CodeLabeledStatement)statement);
-            else if (statement is CodeMethodReturnStatement)
-                EmitReturn((CodeMethodReturnStatement)statement);
-            else if (statement is CodeVariableDeclarationStatement)
-                EmitVariableDeclaration((CodeVariableDeclarationStatement)statement);
-            else if (statement is CodeCommentStatement)
-                EmitComment((CodeCommentStatement)statement);
-            else
-                throw new ArgumentException("Unrecognised statement: " + statement.GetType());
-        }
+		private void EmitStatements(CodeStatementCollection statements)
+		{
+			foreach (CodeStatement statement in statements)
+			{
+				WriteSpace();
+				EmitStatement(statement);
+			}
+		}
 
-        #region Misc.
+		private void EmitStatement(CodeStatement statement)
+		{
+			if (statement is CodeAssignStatement)
+				EmitAssignment((CodeAssignStatement) statement);
+			else if (statement is CodeExpressionStatement)
+				EmitExpressionStatement(((CodeExpressionStatement) statement).Expression);
+			else if (statement is CodeIterationStatement)
+				EmitIteration((CodeIterationStatement) statement);
+			else if (statement is CodeConditionStatement)
+				EmitConditionStatement((CodeConditionStatement) statement);
+			else if (statement is CodeGotoStatement)
+				EmitGoto((CodeGotoStatement) statement);
+			else if (statement is CodeLabeledStatement)
+				EmitLabel((CodeLabeledStatement) statement);
+			else if (statement is CodeMethodReturnStatement)
+				EmitReturn((CodeMethodReturnStatement) statement);
+			else if (statement is CodeVariableDeclarationStatement)
+				EmitVariableDeclaration((CodeVariableDeclarationStatement) statement);
+			else if (statement is CodeCommentStatement)
+				EmitComment((CodeCommentStatement) statement);
+			else
+				throw new ArgumentException("Unrecognised statement: " + statement.GetType());
+		}
 
-        void EmitComment(CodeCommentStatement comment)
-        {
-            if (string.IsNullOrEmpty(comment.Comment.Text))
-                return;
+		#region Misc.
 
-            writer.Write(Parser.SingleSpace);
-            writer.Write(Parser.DefaultComment);
-            writer.Write(Parser.SingleSpace);
-            writer.Write(comment.Comment.Text);
-        }
+		private void EmitComment(CodeCommentStatement comment)
+		{
+			if (string.IsNullOrEmpty(comment.Comment.Text))
+				return;
 
-        #endregion
+			writer.Write(Parser.SingleSpace);
+			writer.Write(Parser.DefaultComment);
+			writer.Write(Parser.SingleSpace);
+			writer.Write(comment.Comment.Text);
+		}
 
-        #endregion
-    }
+		#endregion Misc.
+
+		#endregion Statements
+	}
 }

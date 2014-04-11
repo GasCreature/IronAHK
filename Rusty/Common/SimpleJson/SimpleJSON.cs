@@ -1,48 +1,47 @@
-﻿
-namespace IronAHK.Rusty.Common
+﻿namespace IronAHK.Rusty.Common
 {
-    /// <summary>
-    /// Serialize JSON strings.
-    /// </summary>
-    static partial class SimpleJson
-    {
-        #region Tokens
+	/// <summary>
+	/// Serialize JSON strings.
+	/// </summary>
+	static partial class SimpleJson
+	{
+		#region Tokens
 
-        const char ObjectOpen = '{';
-        const char ObjectClose = '}';
-        const char MemberSeperator = ',';
-        const char MemberAssign = ':';
-        const char MemberAssignAlt = '=';
-        const char ArrayOpen = '[';
-        const char ArrayClose = ']';
-        const char StringBoundary = '"';
-        const char StringBoundaryAlt = '\'';
-        const char Escape = '\\';
-        const string True = "true";
-        const string False = "false";
-        const string Null = "null";
-        const char Space = ' ';
+		private const char ObjectOpen = '{';
+		private const char ObjectClose = '}';
+		private const char MemberSeperator = ',';
+		private const char MemberAssign = ':';
+		private const char MemberAssignAlt = '=';
+		private const char ArrayOpen = '[';
+		private const char ArrayClose = ']';
+		private const char StringBoundary = '"';
+		private const char StringBoundaryAlt = '\'';
+		private const char Escape = '\\';
+		private const string True = "true";
+		private const string False = "false";
+		private const string Null = "null";
+		private const char Space = ' ';
 
-        #endregion
+		#endregion Tokens
 
-        #region Exceptions
+		#region Exceptions
 
-        const string ExUntermField = "Unterminated field";
-        const string ExNoMemberVal = "Expected member value";
-        const string ExNoKeyPair = "Expected key pair";
-        const string ExUnexpectedToken = "Unexpected token";
+		private const string ExUntermField = "Unterminated field";
+		private const string ExNoMemberVal = "Expected member value";
+		private const string ExNoKeyPair = "Expected key pair";
+		private const string ExUnexpectedToken = "Unexpected token";
 
-        const string ExSeperator = " at position ";
+		private const string ExSeperator = " at position ";
 
-        #endregion
+		#endregion Exceptions
 
-        #region Helpers
+		#region Helpers
 
-        static string ErrorMessage(string text, int position)
-        {
-            return string.Concat(text, ExSeperator, position.ToString());
-        }
+		private static string ErrorMessage(string text, int position)
+		{
+			return string.Concat(text, ExSeperator, position.ToString());
+		}
 
-        #endregion
-    }
+		#endregion Helpers
+	}
 }

@@ -3,7 +3,6 @@
   <xsl:template match="c">
     <code>
     <xsl:apply-templates />
-    
     </code>
   </xsl:template>
   <xsl:template match="para">

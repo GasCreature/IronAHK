@@ -2,8 +2,7 @@
 
 namespace IronAHK.Scripting
 {
-    partial class Generator : ICodeGenerator
-    {
-
-    }
+	partial class Generator : ICodeGenerator
+	{
+	}
 }

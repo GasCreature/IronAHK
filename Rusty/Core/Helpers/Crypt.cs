@@ -6,85 +6,85 @@ using System.Text;
 
 namespace IronAHK.Rusty
 {
-    partial class Core
-    {
-        static string ToString(byte[] array)
-        {
-            var buf = new StringBuilder(array.Length * 2);
+	partial class Core
+	{
+		private static string ToString(byte[] array)
+		{
+			var buf = new StringBuilder(array.Length * 2);
 
-            foreach (var b in array)
-                buf.Append(b.ToString("x").PadLeft(2, '0'));
+			foreach (var b in array)
+				buf.Append(b.ToString("x").PadLeft(2, '0'));
 
-            return buf.ToString();
-        }
+			return buf.ToString();
+		}
 
-        static byte[] ToByteArray(object value)
-        {
-            if (value is string)
-                return Encoding.Unicode.GetBytes((string)value);
-            
-            if (value is byte[])
-                return (byte[])value;
+		private static byte[] ToByteArray(object value)
+		{
+			if (value is string)
+				return Encoding.Unicode.GetBytes((string) value);
 
-            if (value == null)
-                return new byte[] { };
+			if (value is byte[])
+				return (byte[]) value;
 
-            var formatter = new BinaryFormatter();
-            var writer = new MemoryStream();
-            formatter.Serialize(writer, value);
-            return writer.ToArray();
-        }
+			if (value == null)
+				return new byte[] { };
 
-        static byte[] Encrypt(object value, object key, bool decrypt, SymmetricAlgorithm alg)
-        {
-            int size = 0;
+			var formatter = new BinaryFormatter();
+			var writer = new MemoryStream();
+			formatter.Serialize(writer, value);
+			return writer.ToArray();
+		}
 
-            foreach (var legal in alg.LegalKeySizes)
-                size = Math.Max(size, legal.MaxSize);
+		private static byte[] Encrypt(object value, object key, bool decrypt, SymmetricAlgorithm alg)
+		{
+			int size = 0;
 
-            var k = new byte[size / 8];
+			foreach (var legal in alg.LegalKeySizes)
+				size = Math.Max(size, legal.MaxSize);
 
-            var keyBytes = ToByteArray(key);
+			var k = new byte[size / 8];
 
-            if (keyBytes.Length < k.Length)
-            {
-                var padded = new byte[k.Length];
-                keyBytes.CopyTo(padded, 0);
-                keyBytes = padded;
-            }
+			var keyBytes = ToByteArray(key);
 
-            for (int i = 0; i < k.Length; i++)
-                k[i] = keyBytes[i];
+			if (keyBytes.Length < k.Length)
+			{
+				var padded = new byte[k.Length];
+				keyBytes.CopyTo(padded, 0);
+				keyBytes = padded;
+			}
 
-            try
-            {
-                alg.Key = k;
-            }
-            catch (CryptographicException)
-            {
-                ErrorLevel = 2;
-                return new byte[] { };
-            }
+			for (int i = 0; i < k.Length; i++)
+				k[i] = keyBytes[i];
 
-            var iv = new byte[alg.IV.Length];
-            var hash = new SHA1Managed().ComputeHash(keyBytes, 0, iv.Length);
+			try
+			{
+				alg.Key = k;
+			}
+			catch (CryptographicException)
+			{
+				ErrorLevel = 2;
+				return new byte[] { };
+			}
 
-            for (int i = 0; i < Math.Min(iv.Length, hash.Length); i++)
-                iv[i] = hash[i];
+			var iv = new byte[alg.IV.Length];
+			var hash = new SHA1Managed().ComputeHash(keyBytes, 0, iv.Length);
 
-            alg.IV = iv;
+			for (int i = 0; i < Math.Min(iv.Length, hash.Length); i++)
+				iv[i] = hash[i];
 
-            var trans = decrypt ? alg.CreateDecryptor() : alg.CreateEncryptor();
-            var buffer = ToByteArray(value);
-            var result = trans.TransformFinalBlock(buffer, 0, buffer.Length);
-            return result;
-        }
+			alg.IV = iv;
 
-        static string Hash(object value, HashAlgorithm alg)
-        {
-            var raw = ToByteArray(value);
-            var result = alg.ComputeHash(raw);
-            return ToString(result);
-        }
-    }
+			var trans = decrypt ? alg.CreateDecryptor() : alg.CreateEncryptor();
+			var buffer = ToByteArray(value);
+			var result = trans.TransformFinalBlock(buffer, 0, buffer.Length);
+			return result;
+		}
+
+		private static string Hash(object value, HashAlgorithm alg)
+		{
+			var raw = ToByteArray(value);
+			var result = alg.ComputeHash(raw);
+			return ToString(result);
+		}
+	}
 }

@@ -4,242 +4,277 @@ using System.Threading;
 
 namespace IronAHK.Rusty.Common
 {
-    /// <summary>
-    /// Class which provides common search Methods to find a Color or a subimage in given Image.
-    /// </summary>
-    class ImageFinder
-    {
-        #region Fields
+	/// <summary>
+	/// Class which provides common search Methods to find a Color or a subimage in given Image.
+	/// </summary>
+	internal class ImageFinder
+	{
+		#region Fields
 
-        private ImageData sourceImage, findImage;
-        private PixelMask findPixel;
-        private CoordProvider Provider;
-        private Point? match;
-        private object matchLocker = new object();
-        private ManualResetEvent[] resets;
-        private int threads = Environment.ProcessorCount;   
+		private ImageData sourceImage, findImage;
+		private PixelMask findPixel;
+		private CoordProvider Provider;
+		private Point? match;
+		private object matchLocker = new object();
+		private ManualResetEvent[] resets;
+		private int threads = Environment.ProcessorCount;
 
-        #endregion
+		#endregion Fields
 
-        #region Constructor
+		#region Constructor
 
-        /// <summary>
-        /// Creates a new Image Finder Instance
-        /// </summary>
-        /// <param name="source">Source Image where to search in</param>
-        public ImageFinder(Bitmap source)
-        {
-            sourceImage = new ImageData(source);
-        }
+		/// <summary>
+		/// Creates a new Image Finder Instance
+		/// </summary>
+		/// <param name="source">Source Image where to search in</param>
+		public ImageFinder(Bitmap source)
+		{
+			sourceImage = new ImageData(source);
+		}
 
-        #endregion
+		#endregion Constructor
 
-        #region Propertys
+		#region Propertys
 
-        public byte Variation { get; set; }
+		public byte Variation
+		{
+			get;
+			set;
+		}
 
-        #endregion
+		#endregion Propertys
 
-        #region Public Methods
+		#region Public Methods
 
-        public Point? Find(Bitmap findBitmap)
-        {
-            if (sourceImage == null || findBitmap == null)
-                throw new InvalidOperationException();
+		public Point? Find(Bitmap findBitmap)
+		{
+			if (sourceImage == null || findBitmap == null)
+				throw new InvalidOperationException();
 
-            findImage = new ImageData(findBitmap);
-            findImage.PixelMaskTable(this.Variation);
+			findImage = new ImageData(findBitmap);
+			findImage.PixelMaskTable(this.Variation);
 
-            var SourceRect = new Rectangle(new Point(0, 0), sourceImage.Size);
-            var NeedleRect = new Rectangle(new Point(0, 0), findImage.Size);
+			var SourceRect = new Rectangle(new Point(0, 0), sourceImage.Size);
+			var NeedleRect = new Rectangle(new Point(0, 0), findImage.Size);
 
-            if (SourceRect.Contains(NeedleRect))
-            {
-                resets = new ManualResetEvent[threads];
-                Provider = new CoordProvider(sourceImage.Size, NeedleRect.Size);
+			if (SourceRect.Contains(NeedleRect))
+			{
+				resets = new ManualResetEvent[threads];
+				Provider = new CoordProvider(sourceImage.Size, NeedleRect.Size);
 
-                for (int i = 0; i < threads; i++)
-                {
-                    resets[i] = new ManualResetEvent(false);
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(ImageWorker), i);
-                }
+				for (int i = 0; i < threads; i++)
+				{
+					resets[i] = new ManualResetEvent(false);
+					ThreadPool.QueueUserWorkItem(new WaitCallback(ImageWorker), i);
+				}
 
-                WaitHandle.WaitAll(resets);
+				WaitHandle.WaitAll(resets);
 
-                return match;
-            }
+				return match;
+			}
 
-            return null;
-        }
+			return null;
+		}
 
-        public Point? Find(Color ColorId)
-        {
-            findPixel = new PixelMask(ColorId, Variation);
+		public Point? Find(Color ColorId)
+		{
+			findPixel = new PixelMask(ColorId, Variation);
 
-            resets = new ManualResetEvent[threads];
-            Provider = new CoordProvider(sourceImage.Size, new Size(1, 1));
+			resets = new ManualResetEvent[threads];
+			Provider = new CoordProvider(sourceImage.Size, new Size(1, 1));
 
-            for (int i = 0; i < threads; i++)
-            {
-                resets[i] = new ManualResetEvent(false);
-                ThreadPool.QueueUserWorkItem(new WaitCallback(PixelWorker), i);
-            }
+			for (int i = 0; i < threads; i++)
+			{
+				resets[i] = new ManualResetEvent(false);
+				ThreadPool.QueueUserWorkItem(new WaitCallback(PixelWorker), i);
+			}
 
-            WaitHandle.WaitAll(resets);
-            return match;
-        }
+			WaitHandle.WaitAll(resets);
+			return match;
+		}
 
-        #endregion
+		#endregion Public Methods
 
-        #region Private Methods
+		#region Private Methods
 
-        void PixelWorker(object state)
-        {
-            Point? Location;
-            Color pix = new Color();
-            int index = (int)state;
+		private void PixelWorker(object state)
+		{
+			Point? Location;
+			Color pix = new Color();
+			int index = (int) state;
 
-            if(Provider == null)
-                throw new ArgumentNullException();
+			if (Provider == null)
+				throw new ArgumentNullException();
 
-            while((Location = Provider.Next()) != null && !match.HasValue) {
+			while ((Location = Provider.Next()) != null && !match.HasValue)
+			{
+				pix = sourceImage.Pixel[Location.Value.X, Location.Value.Y];
+				if (findPixel.Equals(pix))
+				{
+					lock (matchLocker)
+					{
+						if (!match.HasValue)
+							match = Location.Value;
+					}
+					break;
+				}
+			}
 
-                pix = sourceImage.Pixel[Location.Value.X, Location.Value.Y];
-                if(findPixel.Equals(pix)) {
-                    lock(matchLocker) {
-                        if(!match.HasValue)
-                            match = Location.Value;
-                    }
-                    break;
-                }
-            }
+			resets[index].Set();
+		}
 
-            resets[index].Set();
-        }
+		private void ImageWorker(object state)
+		{
+			Point? Location;
+			int index = (int) state;
 
-        void ImageWorker(object state)
-        {
-            Point? Location;
-            int index = (int)state;
+			if (Provider == null)
+				throw new ArgumentNullException();
 
-            if(Provider == null)
-                throw new ArgumentNullException();
+			while ((Location = Provider.Next()) != null && !match.HasValue)
+			{
+				if (CompareAt(Location.Value))
+				{
+					lock (matchLocker)
+					{
+						if (!match.HasValue)
+							match = Location.Value;
+					}
+					break;
+				}
+			}
+			resets[index].Set();
+		}
 
-            while((Location = Provider.Next()) != null && !match.HasValue) {
-                if(CompareAt(Location.Value)) {
-                    lock(matchLocker) {
-                        if(!match.HasValue)
-                            match = Location.Value;
-                    }
-                    break;
-                }
-            }
-            resets[index].Set();
-        }
+		private bool CompareAt(Point findLocation)
+		{
+			for (int row = 0; row < findImage.Size.Height; row++)
+			{
+				for (int col = 0; col < findImage.Size.Width; col++)
+				{
+					var SourcePix = sourceImage.Pixel[col + findLocation.X, row + findLocation.Y];
+					if (!findImage.PixelMask[col, row].Equals(SourcePix))
+						return false;
+				}
+			}
 
-        bool CompareAt(Point findLocation)
-        {
-            for (int row = 0; row < findImage.Size.Height; row++)
-            {
-                for (int col = 0; col < findImage.Size.Width; col++)
-                {
-                    var SourcePix = sourceImage.Pixel[col + findLocation.X, row + findLocation.Y];
-                    if (!findImage.PixelMask[col, row].Equals(SourcePix))
-                        return false;
-                }
-            }
+			return true;
+		}
 
-            return true;
-        }
+		#endregion Private Methods
 
-        #endregion
+		#region Nested Helper Classes
 
-        #region Nested Helper Classes
+		private class ImageData
+		{
+			private readonly Size _size;
+			private readonly Color[,] _pixel;
 
-        class ImageData
-        {
-            readonly Size _size;
-            readonly Color[,] _pixel;
+			public ImageData(Bitmap bmp)
+			{
+				_size = bmp.Size;
+				_pixel = ColorTable(bmp);
+			}
 
-            public ImageData(Bitmap bmp)
-            {
-                _size = bmp.Size;
-                _pixel = ColorTable(bmp);
-            }
+			public PixelMask[,] PixelMask
+			{
+				get;
+				set;
+			}
 
-            public PixelMask[,] PixelMask { get; set; }
+			public Size Size
+			{
+				get
+				{
+					return _size;
+				}
+			}
 
-            public Size Size
-            {
-                get { return _size; }
-            }
+			public Color[,] Pixel
+			{
+				get
+				{
+					return _pixel;
+				}
+			}
 
-            public Color[,] Pixel
-            {
-                get { return _pixel; }
-            }
+			private Color[,] ColorTable(Bitmap bmp)
+			{
+				Color[,] colors = new Color[bmp.Width, bmp.Height];
 
-            Color[,] ColorTable(Bitmap bmp)
-            {
-                Color[,] colors = new Color[bmp.Width, bmp.Height];
+				for (int row = 0; row < bmp.Height; row++)
+					for (int col = 0; col < bmp.Width; col++)
+						colors[col, row] = bmp.GetPixel(col, row);
 
-                for (int row = 0; row < bmp.Height; row++)
-                    for (int col = 0; col < bmp.Width; col++)
-                        colors[col, row] = bmp.GetPixel(col, row);
+				return colors;
+			}
 
-                return colors;
-            }
+			public void PixelMaskTable(byte variation)
+			{
+				PixelMask = new PixelMask[Size.Width, Size.Height];
 
-            public void PixelMaskTable(byte variation)
-            {
-                PixelMask = new PixelMask[Size.Width, Size.Height];
+				for (int row = 0; row < Size.Height; row++)
+					for (int col = 0; col < Size.Width; col++)
+						PixelMask[col, row] = new PixelMask(Pixel[col, row], variation);
+			}
+		}
 
-                for (int row = 0; row < Size.Height; row++)
-                    for (int col = 0; col < Size.Width; col++)
-                        PixelMask[col, row] = new PixelMask(Pixel[col, row], variation);
-            }
-        }
+		private class PixelMask
+		{
+			public PixelMask(Color color, byte variation)
+			{
+				Color = color;
+				Variation = variation;
+			}
 
-        class PixelMask
-        {
-            public PixelMask(Color color, byte variation)
-            {
-                Color = color;
-                Variation = variation;
-            }
+			public PixelMask() : this(Color.Black, 0)
+			{
+			}
 
-            public PixelMask() : this(Color.Black, 0) { }
+			public Color Color
+			{
+				get;
+				set;
+			}
 
-            public Color Color { get; set; }
+			public byte Variation
+			{
+				get;
+				set;
+			}
 
-            public byte Variation { get; set; }
+			public bool Transparent
+			{
+				get
+				{
+					return Color.A == 0;
+				}
+			}
 
-            public bool Transparent
-            {
-                get { return Color.A == 0; }
-            }
+			public bool Exact
+			{
+				get
+				{
+					return Variation == 0;
+				}
+			}
 
-            public bool Exact
-            {
-                get { return Variation == 0; }
-            }
+			public bool Equals(Color match)
+			{
+				if (Transparent)
+					return true;
 
-            public bool Equals(Color match)
-            {
-                if (Transparent)
-                    return true;
+				if (Exact)
+					return Color == match;
 
-                if (Exact)
-                    return Color == match;
+				var r = match.R >= Color.R - Variation && match.R <= Color.R + Variation;
+				var g = match.G >= Color.G - Variation && match.G <= Color.G + Variation;
+				var b = match.B >= Color.B - Variation && match.B <= Color.B + Variation;
 
-                var r = match.R >= Color.R - Variation && match.R <= Color.R + Variation;
-                var g = match.G >= Color.G - Variation && match.G <= Color.G + Variation;
-                var b = match.B >= Color.B - Variation && match.B <= Color.B + Variation;
+				return r && g && b;
+			}
+		}
 
-                return r && g && b;
-            }
-        }
-
-        #endregion
-    }
+		#endregion Nested Helper Classes
+	}
 }

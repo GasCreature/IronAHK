@@ -5,86 +5,86 @@ using System.Text;
 
 namespace IronAHK.Scripting
 {
-    partial class Parser
-    {
-        List<CodeLine> Read(TextReader source, string name)
-        {
-            #region Properties
+	partial class Parser
+	{
+		private List<CodeLine> Read(TextReader source, string name)
+		{
+			#region Properties
 
-            var list = new List<CodeLine>();
-            string code;
-            int line = 0;
+			var list = new List<CodeLine>();
+			string code;
+			int line = 0;
 
-            var includes = new List<string>();
-            string includePath = string.Empty;
+			var includes = new List<string>();
+			string includePath = string.Empty;
 
-            name = Path.GetFullPath(name);
+			name = Path.GetFullPath(name);
 
-            #endregion
+			#endregion Properties
 
-            while ((code = source.ReadLine()) != null)
-            {
-                #region Line
+			while ((code = source.ReadLine()) != null)
+			{
+				#region Line
 
-                line++;
+				line++;
 
-                if (line == 1 && code.Length > 2 && code[0] == '#' && code[1] == '!')
-                    continue;
+				if (line == 1 && code.Length > 2 && code[0] == '#' && code[1] == '!')
+					continue;
 
-                string codeTrim = code.TrimStart(Spaces);
+				string codeTrim = code.TrimStart(Spaces);
 
-                #endregion
+				#endregion Line
 
-                #region Multiline comments
+				#region Multiline comments
 
-                if (codeTrim.Length > 1 && codeTrim[0] == MultiComA && codeTrim[1] == MultiComB)
-                {
-                    while ((code = source.ReadLine()) != null)
-                    {
-                        line++;
-                        codeTrim = code.TrimStart(Spaces);
-                        if (codeTrim.Length > 1 && codeTrim[0] == MultiComB && codeTrim[1] == MultiComA)
-                        {
-                            code = codeTrim = codeTrim.Substring(2);
-                            break;
-                        }
-                    }
-                    if (code == null)
-                        continue;
-                }
+				if (codeTrim.Length > 1 && codeTrim[0] == MultiComA && codeTrim[1] == MultiComB)
+				{
+					while ((code = source.ReadLine()) != null)
+					{
+						line++;
+						codeTrim = code.TrimStart(Spaces);
+						if (codeTrim.Length > 1 && codeTrim[0] == MultiComB && codeTrim[1] == MultiComA)
+						{
+							code = codeTrim = codeTrim.Substring(2);
+							break;
+						}
+					}
+					if (code == null)
+						continue;
+				}
 
-                #endregion
+				#endregion Multiline comments
 
-                #region Directives
+				#region Directives
 
-                if(codeTrim.Length > 1 && codeTrim[0] == Directive)
-                {
-                    if(codeTrim.Length < 2)
-                        throw new ParseException(ExUnknownDirv, line);
-                    
-                    var delim = new char[Spaces.Length + 1];
-                    delim[0] = Multicast;
-                    Spaces.CopyTo(delim, 1);
-                    string[] sub = codeTrim.Split(delim, 2);
-                    var parts = new[] { sub[0], sub.Length > 1 ? sub[1] : string.Empty };
+				if (codeTrim.Length > 1 && codeTrim[0] == Directive)
+				{
+					if (codeTrim.Length < 2)
+						throw new ParseException(ExUnknownDirv, line);
 
-                    parts[1] = StripComment(parts[1]).Trim(Spaces);
+					var delim = new char[Spaces.Length + 1];
+					delim[0] = Multicast;
+					Spaces.CopyTo(delim, 1);
+					string[] sub = codeTrim.Split(delim, 2);
+					var parts = new[] { sub[0], sub.Length > 1 ? sub[1] : string.Empty };
 
-                    int value;
-                    int.TryParse(parts[1], out value);
+					parts[1] = StripComment(parts[1]).Trim(Spaces);
 
-                    bool next = true;
-                    bool includeOnce = false;
+					int value;
+					int.TryParse(parts[1], out value);
 
-                    switch (parts[0].Substring(1).ToUpperInvariant())
-                    {
-                        case "INCLUDE":
-                            includeOnce = true;
-                            goto case "INCLUDEAGAIN";
+					bool next = true;
+					bool includeOnce = false;
 
-                        case "INCLUDEAGAIN":
-                            {
-                                var replace = new[,]
+					switch (parts[0].Substring(1).ToUpperInvariant())
+					{
+						case "INCLUDE":
+							includeOnce = true;
+							goto case "INCLUDEAGAIN";
+
+						case "INCLUDEAGAIN":
+							{
+								var replace = new[,]
                                 {
                                     { "A_ScriptDir", Path.GetDirectoryName(name) },
                                     { "A_AppData", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) },
@@ -92,192 +92,197 @@ namespace IronAHK.Scripting
                                     { "ProgramFiles", Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) },
                                 };
 
-                                for (int i = 0; i < replace.Length / 2; i++)
-                                    parts[1] = Replace(parts[1], string.Format("{0}{1}{0}", Resolve, replace[i, 0]), replace[i, 1]);
+								for (int i = 0; i < replace.Length / 2; i++)
+									parts[1] = Replace(parts[1], string.Format("{0}{1}{0}", Resolve, replace[i, 0]), replace[i, 1]);
 
-                                bool silent = false;
+								bool silent = false;
 
-                                if (parts[1].Length > 3 && parts[1][0] == '*' && (parts[1][1] == 'i' || parts[1][1] == 'I') && IsSpace(parts[1][2]))
-                                {
-                                    parts[1] = parts[1].Substring(3);
-                                    silent = true;
-                                }
+								if (parts[1].Length > 3 && parts[1][0] == '*' && (parts[1][1] == 'i' || parts[1][1] == 'I') && IsSpace(parts[1][2]))
+								{
+									parts[1] = parts[1].Substring(3);
+									silent = true;
+								}
 
-                                string path = parts[1];
+								string path = parts[1];
 
-                                if (!Path.IsPathRooted(path) && Directory.Exists(includePath))
-                                    path = Path.Combine(includePath, path);
-                                else if(!Path.IsPathRooted(path))
-                                    path = Path.Combine(Path.GetDirectoryName(name), path);
+								if (!Path.IsPathRooted(path) && Directory.Exists(includePath))
+									path = Path.Combine(includePath, path);
+								else if (!Path.IsPathRooted(path))
+									path = Path.Combine(Path.GetDirectoryName(name), path);
 
-                                path = Path.GetFullPath(path);
+								path = Path.GetFullPath(path);
 
-                                if (!File.Exists(path))
-                                {
-                                    if (!silent)
-                                        throw new ParseException(ExIncludeNotFound, line);
-                                    break;
-                                }
+								if (!File.Exists(path))
+								{
+									if (!silent)
+										throw new ParseException(ExIncludeNotFound, line);
+									break;
+								}
 
-                                if (includeOnce && includes.Contains(path))
-                                    break;
+								if (includeOnce && includes.Contains(path))
+									break;
 
-                                var newlist = Read(new StreamReader(path), path);
-                                list.AddRange(newlist);
+								var newlist = Read(new StreamReader(path), path);
+								list.AddRange(newlist);
 
-                                if (!includes.Contains(path))
-                                    includes.Add(path);
-                            }
-                            break;
+								if (!includes.Contains(path))
+									includes.Add(path);
+							}
+							break;
 
-                        case "NODYNAMICVARS":
-                            DynamicVars = false;
-                            break;
+						case "NODYNAMICVARS":
+							DynamicVars = false;
+							break;
 
-                        case "NOENV":
-                            NoEnv = true;
-                            break;
+						case "NOENV":
+							NoEnv = true;
+							break;
 
-                        case "NOTRAYICON":
-                            NoTrayIcon = true;
-                            break;
+						case "NOTRAYICON":
+							NoTrayIcon = true;
+							break;
 
-                        case "PERSISTENT":
-                            Persistent = true;
-                            break;
+						case "PERSISTENT":
+							Persistent = true;
+							break;
 
-                        case "SINGLEINSTANCE":
-                            switch (parts[1].ToUpperInvariant())
-                            {
-                                case "FORCE":
-                                    SingleInstance = true;
-                                    break;
-                                case "IGNORE":
-                                    SingleInstance = null;
-                                    break;
-                                case "OFF":
-                                    SingleInstance = false;
-                                    break;
-                                default:
-                                    break;
-                            }
-                            break;
+						case "SINGLEINSTANCE":
+							switch (parts[1].ToUpperInvariant())
+							{
+								case "FORCE":
+									SingleInstance = true;
+									break;
 
-                        case "WINACTIVATEFORCE":
-                            WinActivateForce = true;
-                            break;
+								case "IGNORE":
+									SingleInstance = null;
+									break;
 
-                        case "HOTSTRING":
-                            switch (parts[1].ToUpperInvariant())
-                            {
-                                case "NOMOUSE":
-                                    HotstringNoMouse = true;
-                                    break;
-                                case "ENDCHARS":
-                                    HotstringEndChars = parts[1];
-                                    break;
-                                default:
-                                    next = false;
-                                    break;
-                            }
-                            break;
+								case "OFF":
+									SingleInstance = false;
+									break;
 
-                        case "ALLOWSAMELINECOMMENTS":
-                        case "ERRORSTDOUT":
-                        case "HOTKEYINTERVAL":
-                        case "HOTKEYMODIFIERTIMEOUT":
-                        case "INSTALLKEYBDHOOK":
-                        case "INSTALLMOUSEHOOK":
-                        case "KEYHISTORY":
-                        case "MAXHOTKEYSPERINTERVAL":
-                        case "MAXMEM":
-                        case "MAXTHREADS":
-                        case "MAXTHREADSBUFFER":
-                        case "MAXTHREADSPERHOTKEY":
-                        case "USEHOOK":
-                            // deprecated directives
-                            break;
+								default:
+									break;
+							}
+							break;
 
-                        default:
-                            next = false;
-                            break;
-                    }
+						case "WINACTIVATEFORCE":
+							WinActivateForce = true;
+							break;
 
-                    if (next)
-                        continue;
-                }
+						case "HOTSTRING":
+							switch (parts[1].ToUpperInvariant())
+							{
+								case "NOMOUSE":
+									HotstringNoMouse = true;
+									break;
 
-                #endregion
+								case "ENDCHARS":
+									HotstringEndChars = parts[1];
+									break;
 
-                #region Mulitline strings
+								default:
+									next = false;
+									break;
+							}
+							break;
 
-                if (codeTrim.Length > 0 && codeTrim[0] == ParenOpen)
-                {
-                    if (list.Count == 0)
-                        throw new ParseException(ExUnexpected, line);
+						case "ALLOWSAMELINECOMMENTS":
+						case "ERRORSTDOUT":
+						case "HOTKEYINTERVAL":
+						case "HOTKEYMODIFIERTIMEOUT":
+						case "INSTALLKEYBDHOOK":
+						case "INSTALLMOUSEHOOK":
+						case "KEYHISTORY":
+						case "MAXHOTKEYSPERINTERVAL":
+						case "MAXMEM":
+						case "MAXTHREADS":
+						case "MAXTHREADSBUFFER":
+						case "MAXTHREADSPERHOTKEY":
+						case "USEHOOK":
+							// deprecated directives
+							break;
 
-                    var buf = new StringBuilder(code.Length);
-                    buf.Append(code);
-                    buf.Append(Environment.NewLine);
+						default:
+							next = false;
+							break;
+					}
 
-                    while ((code = source.ReadLine()) != null)
-                    {
-                        codeTrim = code.TrimStart(Spaces);
+					if (next)
+						continue;
+				}
 
-                        if (codeTrim.Length > 0 && codeTrim[0] == ParenClose)
-                        {
-                            code = codeTrim = codeTrim.Substring(1);
-                            buf.Append(ParenClose);
-                            break;
-                        }
-                        else
-                        {
-                            buf.Append(code);
-                            buf.Append(Environment.NewLine);
-                        }
-                    }
+				#endregion Directives
 
-                    string str = buf.ToString();
-                    string result = MultilineString(str);
-                    list[list.Count - 1].Code += result + code;
-                    continue;
-                }
+				#region Mulitline strings
 
-                #endregion
+				if (codeTrim.Length > 0 && codeTrim[0] == ParenOpen)
+				{
+					if (list.Count == 0)
+						throw new ParseException(ExUnexpected, line);
 
-                #region Statement
+					var buf = new StringBuilder(code.Length);
+					buf.Append(code);
+					buf.Append(Environment.NewLine);
 
-                code = code.Trim(Spaces);
+					while ((code = source.ReadLine()) != null)
+					{
+						codeTrim = code.TrimStart(Spaces);
 
-                if (code.StartsWith(new string(new[] { MultiComB, MultiComA })))
-                    code = code.Substring(2);
+						if (codeTrim.Length > 0 && codeTrim[0] == ParenClose)
+						{
+							code = codeTrim = codeTrim.Substring(1);
+							buf.Append(ParenClose);
+							break;
+						}
+						else
+						{
+							buf.Append(code);
+							buf.Append(Environment.NewLine);
+						}
+					}
 
-                if (code.Length == 0 || IsCommentLine(code))
-                    continue;
+					string str = buf.ToString();
+					string result = MultilineString(str);
+					list[list.Count - 1].Code += result + code;
+					continue;
+				}
 
-                if (IsContinuationLine(code))
-                {
-                    if (list.Count == 0)
-                        throw new ParseException(ExUnexpected, line);
+				#endregion Mulitline strings
 
-                    int i = list.Count - 1;
-                    var buf = new StringBuilder(list[i].Code, list[i].Code.Length + Environment.NewLine.Length + code.Length);
-                    buf.Append(Environment.NewLine);
-                    buf.Append(code);
-                    list[i].Code = buf.ToString();
-                }
-                else
-                {
-                    Translate(ref code);
+				#region Statement
 
-                    if (code.Length != 0)
-                        list.Add(new CodeLine(name, line, code));
-                }
+				code = code.Trim(Spaces);
 
-                #endregion
-            }
+				if (code.StartsWith(new string(new[] { MultiComB, MultiComA })))
+					code = code.Substring(2);
 
-            return list;
-        }
-    }
+				if (code.Length == 0 || IsCommentLine(code))
+					continue;
+
+				if (IsContinuationLine(code))
+				{
+					if (list.Count == 0)
+						throw new ParseException(ExUnexpected, line);
+
+					int i = list.Count - 1;
+					var buf = new StringBuilder(list[i].Code, list[i].Code.Length + Environment.NewLine.Length + code.Length);
+					buf.Append(Environment.NewLine);
+					buf.Append(code);
+					list[i].Code = buf.ToString();
+				}
+				else
+				{
+					Translate(ref code);
+
+					if (code.Length != 0)
+						list.Add(new CodeLine(name, line, code));
+				}
+
+				#endregion Statement
+			}
+
+			return list;
+		}
+	}
 }

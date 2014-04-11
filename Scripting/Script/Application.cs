@@ -3,24 +3,28 @@ using System.Windows.Forms;
 
 namespace IronAHK.Scripting
 {
-    partial class Script
-    {
-        public static Variables Vars { get; private set; }
+	partial class Script
+	{
+		public static Variables Vars
+		{
+			get;
+			private set;
+		}
 
-        static Script()
-        {
-            if (Vars == null)
-                Vars = new Variables();
+		static Script()
+		{
+			if (Vars == null)
+				Vars = new Variables();
 
-            if (Environment.OSVersion.Platform == PlatformID.Unix)
-                Environment.SetEnvironmentVariable("MONO_VISUAL_STYLES", "gtkplus");
+			if (Environment.OSVersion.Platform == PlatformID.Unix)
+				Environment.SetEnvironmentVariable("MONO_VISUAL_STYLES", "gtkplus");
 
-            Application.EnableVisualStyles();
-        }
+			Application.EnableVisualStyles();
+		}
 
-        public static void Run()
-        {
-            Application.Run();
-        }
-    }
+		public static void Run()
+		{
+			Application.Run();
+		}
+	}
 }

@@ -1,101 +1,148 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace IronAHK.Rusty.Common
 {
-    partial class Window
-    {
-        public class SearchCriteria
-        {
-            public string Title { get; set; }
-            public string Text { get; set; }
-            public string ExcludeTitle { get; set; }
-            public string ExcludeText { get; set; }
+	partial class Window
+	{
+		public class SearchCriteria
+		{
+			public string Title
+			{
+				get;
+				set;
+			}
 
-            public string ClassName { get; set; }
-            public IntPtr ID { get; set; }
-            public IntPtr PID { get; set; }
-            public string Group { get; set; }
+			public string Text
+			{
+				get;
+				set;
+			}
 
-            public bool HasExcludes
-            {
-                get { return !string.IsNullOrEmpty(ExcludeTitle) || !string.IsNullOrEmpty(ExcludeText); }
-            }
+			public string ExcludeTitle
+			{
+				get;
+				set;
+			}
 
-            public bool HasID
-            {
-                get { return ID != IntPtr.Zero || PID != IntPtr.Zero; }
-            }
+			public string ExcludeText
+			{
+				get;
+				set;
+			}
 
-            public bool IsEmpty
-            {
-                get { return !HasID && !HasExcludes && string.IsNullOrEmpty(Title) && string.IsNullOrEmpty(Text) && string.IsNullOrEmpty(ClassName); }
-            }
+			public string ClassName
+			{
+				get;
+				set;
+			}
 
+			public IntPtr ID
+			{
+				get;
+				set;
+			}
 
-            public static SearchCriteria FromString(string mixed)
-            {
-                if (mixed.IndexOf(Core.Keyword_ahk, StringComparison.OrdinalIgnoreCase) == -1)
-                    return new SearchCriteria { Title = mixed };
+			public IntPtr PID
+			{
+				get;
+				set;
+			}
 
-                var criteria = new SearchCriteria();
-                var i = 0;
-                var t = false;
+			public string Group
+			{
+				get;
+				set;
+			}
 
-                while ((i = mixed.IndexOf(Core.Keyword_ahk, i, StringComparison.OrdinalIgnoreCase)) != -1)
-                {
-                    if (!t)
-                    {
-                        var pre = i == 0 ? string.Empty : mixed.Substring(0, i).Trim(Core.Keyword_Spaces);
+			public bool HasExcludes
+			{
+				get
+				{
+					return !string.IsNullOrEmpty(ExcludeTitle) || !string.IsNullOrEmpty(ExcludeText);
+				}
+			}
 
-                        if (pre.Length != 0)
-                            criteria.Title = pre;
+			public bool HasID
+			{
+				get
+				{
+					return ID != IntPtr.Zero || PID != IntPtr.Zero;
+				}
+			}
 
-                        t = true;
-                    }
+			public bool IsEmpty
+			{
+				get
+				{
+					return !HasID && !HasExcludes && string.IsNullOrEmpty(Title) && string.IsNullOrEmpty(Text) && string.IsNullOrEmpty(ClassName);
+				}
+			}
 
-                    var z = mixed.IndexOfAny(Core.Keyword_Spaces, i);
+			public static SearchCriteria FromString(string mixed)
+			{
+				if (mixed.IndexOf(Core.Keyword_ahk, StringComparison.OrdinalIgnoreCase) == -1)
+					return new SearchCriteria
+					{
+						Title = mixed
+					};
 
-                    if (z == -1)
-                        break;
+				var criteria = new SearchCriteria();
+				var i = 0;
+				var t = false;
 
-                    var word = mixed.Substring(i, z - i);
+				while ((i = mixed.IndexOf(Core.Keyword_ahk, i, StringComparison.OrdinalIgnoreCase)) != -1)
+				{
+					if (!t)
+					{
+						var pre = i == 0 ? string.Empty : mixed.Substring(0, i).Trim(Core.Keyword_Spaces);
 
-                    var e = mixed.IndexOf(Core.Keyword_ahk, ++i, StringComparison.OrdinalIgnoreCase);
-                    var arg = (e == -1 ? mixed.Substring(z) : mixed.Substring(z, e - z)).Trim();
-                    long n;
+						if (pre.Length != 0)
+							criteria.Title = pre;
 
-                    switch (word.ToLowerInvariant())
-                    {
-                        case Core.Keyword_ahk_class: criteria.ClassName = arg; break;
-                        case Core.Keyword_ahk_group: criteria.Group = arg; break;
+						t = true;
+					}
 
-                        case Core.Keyword_ahk_id:
-                            if (long.TryParse(arg, out n))
-                                criteria.ID = new IntPtr(n);
-                            break;
+					var z = mixed.IndexOfAny(Core.Keyword_Spaces, i);
 
-                        case Core.Keyword_ahk_pid:
-                            if (long.TryParse(arg, out n))
-                                criteria.PID = new IntPtr(n);
-                            break;
-                    }
+					if (z == -1)
+						break;
 
-                    i++;
-                }
+					var word = mixed.Substring(i, z - i);
 
-                return criteria;
-            }
+					var e = mixed.IndexOf(Core.Keyword_ahk, ++i, StringComparison.OrdinalIgnoreCase);
+					var arg = (e == -1 ? mixed.Substring(z) : mixed.Substring(z, e - z)).Trim();
+					long n;
 
-            public static SearchCriteria FromString(string title, string text, string excludeTitle, string excludeText)
-            {
-                var criteria = FromString(title);
-                criteria.Text = text;
-                criteria.ExcludeTitle = excludeTitle;
-                criteria.ExcludeText = excludeText;
-                return criteria;
-            }
-        }
-    }
+					switch (word.ToLowerInvariant())
+					{
+						case Core.Keyword_ahk_class: criteria.ClassName = arg; break;
+						case Core.Keyword_ahk_group: criteria.Group = arg; break;
+
+						case Core.Keyword_ahk_id:
+							if (long.TryParse(arg, out n))
+								criteria.ID = new IntPtr(n);
+							break;
+
+						case Core.Keyword_ahk_pid:
+							if (long.TryParse(arg, out n))
+								criteria.PID = new IntPtr(n);
+							break;
+					}
+
+					i++;
+				}
+
+				return criteria;
+			}
+
+			public static SearchCriteria FromString(string title, string text, string excludeTitle, string excludeText)
+			{
+				var criteria = FromString(title);
+				criteria.Text = text;
+				criteria.ExcludeTitle = excludeTitle;
+				criteria.ExcludeText = excludeText;
+				return criteria;
+			}
+		}
+	}
 }

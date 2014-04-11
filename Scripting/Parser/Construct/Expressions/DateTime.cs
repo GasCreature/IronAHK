@@ -2,12 +2,12 @@
 
 namespace IronAHK.Scripting
 {
-    partial class Parser
-    {
-        CodeExpression ParseDateExpression(string code)
-        {
-            // TODO: date/time arithmetic expressions
-            return new CodeExpression();
-        }
-    }
+	partial class Parser
+	{
+		private CodeExpression ParseDateExpression(string code)
+		{
+			// TODO: date/time arithmetic expressions
+			return new CodeExpression();
+		}
+	}
 }

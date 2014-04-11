@@ -44,7 +44,8 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RegisterForComInterop>false</RegisterForComInterop>
-    <DocumentationFile>bin\Debug\IronAHK.Rusty.xml</DocumentationFile>
+    <DocumentationFile>
+    </DocumentationFile>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>

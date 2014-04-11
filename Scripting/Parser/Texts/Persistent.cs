@@ -1,26 +1,25 @@
-
 namespace IronAHK.Scripting
 {
-    partial class Parser
-    {
-        bool persistent;
+	partial class Parser
+	{
+		private bool persistent;
 
-        void CheckPersistent(string name)
-        {
-            if (persistent)
-                return;
+		private void CheckPersistent(string name)
+		{
+			if (persistent)
+				return;
 
-            switch (name.ToLowerInvariant())
-            {
-                case "settimer":
-                case "menu":
-                case "hotkey":
-                case "hotstring":
-                case "onmessage":
-                case "gui":
-                    persistent = true;
-                    break;
-            }
-        }
-    }
+			switch (name.ToLowerInvariant())
+			{
+				case "settimer":
+				case "menu":
+				case "hotkey":
+				case "hotstring":
+				case "onmessage":
+				case "gui":
+					persistent = true;
+					break;
+			}
+		}
+	}
 }

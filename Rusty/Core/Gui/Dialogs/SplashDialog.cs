@@ -3,137 +3,153 @@ using System.Windows.Forms;
 
 namespace IronAHK.Rusty
 {
-    class SplashDialog : Form, IComplexDialoge
-    {
+	internal class SplashDialog : Form, IComplexDialoge
+	{
+		#region Controls
 
+		private TableLayoutPanel layoutTable;
+		private Label main, sub;
+		private PictureBox pic;
 
-        #region Controls
+		#endregion Controls
 
-        private TableLayoutPanel layoutTable;
-        private Label main, sub;
-        private PictureBox pic;
+		#region Constructor
 
-        #endregion
+		public SplashDialog()
+		{
+			InitializeComponent();
+		}
 
-        #region Constructor
+		private void InitializeComponent()
+		{
+			#region Controls
 
-        public SplashDialog() {
-            InitializeComponent();
-        }
+			layoutTable = new TableLayoutPanel();
 
+			main = new Label();
+			sub = new Label();
+			pic = new PictureBox();
 
-        private void InitializeComponent() {
+			#endregion Controls
 
-            #region Controls
+			SuspendLayout();
 
-            layoutTable = new TableLayoutPanel();
+			//
+			// Layout Table
+			//
+			layoutTable.ColumnCount = 1;
+			layoutTable.RowCount = 3;
+			layoutTable.GrowStyle = TableLayoutPanelGrowStyle.AddColumns;
+			layoutTable.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+			layoutTable.AutoSize = true;
+			layoutTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 
-            main = new Label();
-            sub = new Label();
-            pic = new PictureBox();
+			//
+			// Main Text
+			//
+			main.Dock = DockStyle.Fill;
+			main.Font = new Font(main.Font, FontStyle.Bold);
+			main.TextAlign = ContentAlignment.MiddleCenter;
+			main.Size = new Size(100, 20);
+			main.AutoSize = true;
+			main.Location = new Point(0, 30);
 
-            #endregion
+			//
+			// Pictrue Control
+			//
+			pic.Dock = DockStyle.Fill;
+			pic.SizeMode = PictureBoxSizeMode.AutoSize;
+			pic.Size = new Size(100, 20);
+			pic.AutoSize = true;
+			pic.Location = new Point(0, 40);
 
-            SuspendLayout();
+			//
+			// Sub Text
+			//
+			sub.Dock = DockStyle.Fill;
+			sub.TextAlign = ContentAlignment.MiddleCenter;
+			sub.Size = new Size(100, 20);
+			sub.AutoSize = true;
+			sub.Location = new Point(0, 150);
 
-            //
-            // Layout Table
-            //
-            layoutTable.ColumnCount = 1;
-            layoutTable.RowCount = 3;
-            layoutTable.GrowStyle = TableLayoutPanelGrowStyle.AddColumns;
-            layoutTable.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layoutTable.AutoSize = true;
-            layoutTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+			layoutTable.Controls.Add(main, 0, 0);
+			layoutTable.Controls.Add(pic, 0, 1);
+			layoutTable.Controls.Add(sub, 0, 2);
 
+			Controls.Add(layoutTable);
 
-            //
-            // Main Text
-            //
-            main.Dock = DockStyle.Fill;
-            main.Font = new Font(main.Font, FontStyle.Bold);
-            main.TextAlign = ContentAlignment.MiddleCenter;
-            main.Size = new Size(100, 20);
-            main.AutoSize = true;
-            main.Location = new Point(0, 30);
+			this.Size = new System.Drawing.Size(500, 400);
+			StartPosition = FormStartPosition.CenterScreen;
+			FormBorderStyle = FormBorderStyle.FixedDialog;
+			MaximizeBox = false;
+			MinimizeBox = false;
+			ControlBox = true;
+			ShowInTaskbar = false;
+			AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+			AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+			AutoSize = true;
 
-            //
-            // Pictrue Control
-            //
-            pic.Dock = DockStyle.Fill;
-            pic.SizeMode = PictureBoxSizeMode.AutoSize;
-            pic.Size = new Size(100, 20);
-            pic.AutoSize = true;
-            pic.Location = new Point(0, 40);
+			ResumeLayout(true);
+		}
 
+		#endregion Constructor
 
-            //
-            // Sub Text
-            //
-            sub.Dock = DockStyle.Fill;
-            sub.TextAlign = ContentAlignment.MiddleCenter;
-            sub.Size = new Size(100, 20);
-            sub.AutoSize = true;
-            sub.Location = new Point(0, 150);
+		#region IComplexDialogeProperties
 
+		public string Title
+		{
+			get
+			{
+				return Text;
+			}
+			set
+			{
+				Text = value;
+			}
+		}
 
-            layoutTable.Controls.Add(main, 0, 0);
-            layoutTable.Controls.Add(pic, 0, 1);
-            layoutTable.Controls.Add(sub, 0, 2);
+		public string Subtext
+		{
+			get
+			{
+				return sub.Text;
+			}
+			set
+			{
+				sub.Text = value;
+				sub.Visible = !string.IsNullOrEmpty(sub.Text);
+			}
+		}
 
-            Controls.Add(layoutTable);
+		public string MainText
+		{
+			get
+			{
+				return main.Text;
+			}
+			set
+			{
+				main.Text = value;
+				main.Visible = !string.IsNullOrEmpty(main.Text);
+			}
+		}
 
+		#endregion IComplexDialogeProperties
 
-            this.Size = new System.Drawing.Size(500, 400);
-            StartPosition = FormStartPosition.CenterScreen;
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            ControlBox = true;
-            ShowInTaskbar = false;
-            AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            AutoSize = true;
+		#region Public Properties
 
+		public Image Image
+		{
+			get
+			{
+				return pic.Image;
+			}
+			set
+			{
+				pic.Image = value;
+			}
+		}
 
-            ResumeLayout(true);
-        }
-        #endregion
-
-        #region IComplexDialogeProperties
-
-        public string Title {
-            get { return Text; }
-            set { Text = value; }
-        }
-
-        public string Subtext {
-            get { return sub.Text; }
-            set {
-                sub.Text = value;
-                sub.Visible = !string.IsNullOrEmpty(sub.Text);
-            }
-        }
-
-        public string MainText {
-            get { return main.Text; }
-            set {
-                main.Text = value;
-                main.Visible = !string.IsNullOrEmpty(main.Text);
-            }
-        }
-        #endregion
-
-        #region Public Properties
-
-        public Image Image {
-            get { return pic.Image; }
-            set {
-                pic.Image = value;
-            }
-        }
-
-        #endregion
-
-    }
+		#endregion Public Properties
+	}
 }

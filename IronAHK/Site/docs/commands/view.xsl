@@ -23,7 +23,6 @@
       <xsl:if test="members/member/summary">
         <p>
           <xsl:apply-templates select="members/member/summary" />
-          
         </p>
       </xsl:if>
       <h3 class="command"> <xsl:value-of select="$cmd" /> <xsl:text>(</xsl:text>
@@ -50,12 +49,10 @@
       <xsl:if test="members/member/returns">
         <h4>Returns</h4>
         <xsl:apply-templates select="members/member/returns" />
-        
       </xsl:if>
       <xsl:if test="members/member/remarks">
         <h4>Remarks</h4>
         <xsl:apply-templates select="members/member/remarks" />
-        
       </xsl:if>
     </div>
     </body>

@@ -2,15 +2,15 @@
 
 namespace IronAHK.Rusty.Common
 {
-    /// <summary>
-    /// Adapted from http://tomkaminski.com/crc32-hashalgorithm-c-net
-    /// License: public domain
-    /// </summary>
-    class CRC32 : HashAlgorithm
-    {
-        public const uint seed = 0xffffffff;
+	/// <summary>
+	/// Adapted from http://tomkaminski.com/crc32-hashalgorithm-c-net
+	/// License: public domain
+	/// </summary>
+	internal class CRC32 : HashAlgorithm
+	{
+		public const uint seed = 0xffffffff;
 
-        readonly static uint[] table = new uint[]
+		private static readonly uint[] table = new uint[]
         {
             0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419,
             0x706AF48F, 0xE963A535, 0x9E6495A3, 0x0EDB8832, 0x79DCB8A4,
@@ -66,51 +66,54 @@ namespace IronAHK.Rusty.Common
             0x2D02EF8D
         };
 
-        uint value;
+		private uint value;
 
-        public override void Initialize()
-        {
-            value = 0;
-        }
+		public override void Initialize()
+		{
+			value = 0;
+		}
 
-        protected override void HashCore(byte[] buffer, int start, int length)
-        {
-            value ^= seed;
+		protected override void HashCore(byte[] buffer, int start, int length)
+		{
+			value ^= seed;
 
-            unchecked
+			unchecked
+			{
+				while (--length >= 0)
+				{
+					value = table[(value ^ buffer[start++]) & 0xFF] ^ (value >> 8);
+				}
+			}
+
+			value ^= seed;
+		}
+
+		protected override byte[] HashFinal()
+		{
+			HashValue = new[]
             {
-                while (--length >= 0)
-                {
-                    value = table[(value ^ buffer[start++]) & 0xFF] ^ (value >> 8);
-                }
-            }
-
-            value ^= seed;
-        }
-
-        protected override byte[] HashFinal()
-        {
-            HashValue = new[]
-            {
-                (byte)((value >> 24) & 0xff), 
-                (byte)((value >> 16) & 0xff), 
-                (byte)((value >> 8) & 0xff), 
-                (byte)(value & 0xff) 
+                (byte)((value >> 24) & 0xff),
+                (byte)((value >> 16) & 0xff),
+                (byte)((value >> 8) & 0xff),
+                (byte)(value & 0xff)
             };
-            return HashValue;
-        }
+			return HashValue;
+		}
 
-        public uint Value
-        {
-            get
-            {
-                return (uint)((HashValue[0] << 24) | (HashValue[1] << 16) | (HashValue[2] << 8) | HashValue[3]);
-            }
-        }
+		public uint Value
+		{
+			get
+			{
+				return (uint) ((HashValue[0] << 24) | (HashValue[1] << 16) | (HashValue[2] << 8) | HashValue[3]);
+			}
+		}
 
-        public override int HashSize
-        {
-            get { return 32; }
-        }
-    }
+		public override int HashSize
+		{
+			get
+			{
+				return 32;
+			}
+		}
+	}
 }

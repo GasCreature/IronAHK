@@ -6,17 +6,17 @@ using System.Runtime.CompilerServices;
 
 namespace IronAHK.Rusty
 {
-    /// <summary>
-    /// A library of commands useful for desktop scripting.
-    /// </summary>
-    public partial class Core
-    {
-        const bool Debug =
+	/// <summary>
+	/// A library of commands useful for desktop scripting.
+	/// </summary>
+	public partial class Core
+	{
+		private const bool Debug =
 #if DEBUG
  true
 #else
  false
 #endif
 ;
-    }
+	}
 }

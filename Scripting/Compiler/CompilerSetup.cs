@@ -1,3 +1,4 @@
+using IronAHK.Rusty;
 using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
@@ -5,122 +6,121 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
-using IronAHK.Rusty;
 
 namespace IronAHK.Scripting
 {
-    partial class Compiler : ICodeCompiler
-    {
-        AssemblyName AName;
-        AssemblyBuilder ABuilder;
-        
-        Assembly LinkingTo;
-        MethodBuilder EntryPoint;
-        MethodCollection Methods;
-        ILMirror Mirror;
+	partial class Compiler : ICodeCompiler
+	{
+		private AssemblyName AName;
+		private AssemblyBuilder ABuilder;
 
-        public Compiler()
-        {
-            Methods = new MethodCollection();
-        }
-        
-        public void LinkTo(string file)
-        {
-            LinkingTo = File.Exists(file) ? Assembly.LoadFrom(file) : Assembly.Load(Path.GetFileNameWithoutExtension(file));
-                
-            MineTypes(LinkingTo);
-        }
-        
-        void Setup(CompilerParameters Options, bool ContainsLocalFunctions)
-        {
-            if (string.IsNullOrEmpty(Options.OutputAssembly))
-            {
-                if (Options.GenerateInMemory)
-                    Options.OutputAssembly = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()) + ".exe");
-                else
-                    throw new ArgumentNullException();
-            }
+		private Assembly LinkingTo;
+		private MethodBuilder EntryPoint;
+		private MethodCollection Methods;
+		private ILMirror Mirror;
 
-            string name = Path.GetFileName(Options.OutputAssembly);
-            string dir = Path.GetDirectoryName(Path.GetFullPath(Options.OutputAssembly));
-            AName = new AssemblyName(name);
-            ABuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(AName, AssemblyBuilderAccess.RunAndSave, dir);
+		public Compiler()
+		{
+			Methods = new MethodCollection();
+		}
 
-            var Parameters = Options as IACompilerParameters;
-            if(Parameters.Merge && (!Parameters.MergeFallbackToLink || !ContainsLocalFunctions))
-            {
-                Mirror = new ILMirror();
-                Mirror.Sources.Add(typeof(Rusty.Core).Module);
-                Mirror.Sources.Add(typeof(Script).Module);
-            }
-            
-            foreach (var type in new[] { typeof(Core), typeof(Script) })
-                MineMethods(type);
+		public void LinkTo(string file)
+		{
+			LinkingTo = File.Exists(file) ? Assembly.LoadFrom(file) : Assembly.Load(Path.GetFileNameWithoutExtension(file));
 
-            foreach (var assembly in Options.ReferencedAssemblies)
-                LinkTo(assembly);
-        }
-        
-        bool ContainsLocalFunctions(CodeCompileUnit[] Units)
-        {
-            // Drill down into the hierachy to scan for local functions.
-            foreach(CodeCompileUnit Unit in Units)
-            {
-                foreach(CodeNamespace Namespace in Unit.Namespaces) 
-                {
-                    foreach(CodeTypeDeclaration Decl in Namespace.Types)
-                    {
-                        foreach(CodeTypeMember Member in Decl.Members)
-                        {
-                            if(Member is CodeMemberMethod)
-                            {
-                                if(!(Member is CodeEntryPointMethod))
-                                    return true;
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
+			MineTypes(LinkingTo);
+		}
 
-        void MineTypes(Assembly Asm)
-        {
-            foreach(var T in Asm.GetTypes())
-                MineMethods(T);
-        }
+		private void Setup(CompilerParameters Options, bool ContainsLocalFunctions)
+		{
+			if (string.IsNullOrEmpty(Options.OutputAssembly))
+			{
+				if (Options.GenerateInMemory)
+					Options.OutputAssembly = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()) + ".exe");
+				else
+					throw new ArgumentNullException();
+			}
 
-        void MineMethods(Type Typ)
-        {
-            if (!Typ.IsPublic || Typ.IsAbstract)
-                return;
+			string name = Path.GetFileName(Options.OutputAssembly);
+			string dir = Path.GetDirectoryName(Path.GetFullPath(Options.OutputAssembly));
+			AName = new AssemblyName(name);
+			ABuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(AName, AssemblyBuilderAccess.RunAndSave, dir);
 
-            Debug("Adding type " + Typ.Name);
+			var Parameters = Options as IACompilerParameters;
+			if (Parameters.Merge && (!Parameters.MergeFallbackToLink || !ContainsLocalFunctions))
+			{
+				Mirror = new ILMirror();
+				Mirror.Sources.Add(typeof(Rusty.Core).Module);
+				Mirror.Sources.Add(typeof(Script).Module);
+			}
 
-            foreach(var Method in Typ.GetMethods())
-            {
-                // We skip private methods for privacy, abstract/nonstatic/constructor/generic methods for convenience
-                // Also, properties because exposing those is plain silly
-                if(Method.IsPrivate || Method.IsAbstract || Method.IsConstructor || !Method.IsStatic || Method.IsGenericMethod ||
-                   Method.Name.StartsWith("get_") || Method.Name.StartsWith("set_"))
-                    continue;
-        
-                Methods.Add(Method);
-            }
-        }
+			foreach (var type in new[] { typeof(Core), typeof(Script) })
+				MineMethods(type);
 
-        [Conditional("DEBUG")]
-        void Debug(string message)
-        {
-            Console.WriteLine(message);
-        }
+			foreach (var assembly in Options.ReferencedAssemblies)
+				LinkTo(assembly);
+		}
 
-        public void Save()
-        {
-            if(Mirror != null)
-                Mirror.Complete();
-            
-            ABuilder.Save(AName.Name);
-        }
-    }
+		private bool ContainsLocalFunctions(CodeCompileUnit[] Units)
+		{
+			// Drill down into the hierachy to scan for local functions.
+			foreach (CodeCompileUnit Unit in Units)
+			{
+				foreach (CodeNamespace Namespace in Unit.Namespaces)
+				{
+					foreach (CodeTypeDeclaration Decl in Namespace.Types)
+					{
+						foreach (CodeTypeMember Member in Decl.Members)
+						{
+							if (Member is CodeMemberMethod)
+							{
+								if (!(Member is CodeEntryPointMethod))
+									return true;
+							}
+						}
+					}
+				}
+			}
+			return false;
+		}
+
+		private void MineTypes(Assembly Asm)
+		{
+			foreach (var T in Asm.GetTypes())
+				MineMethods(T);
+		}
+
+		private void MineMethods(Type Typ)
+		{
+			if (!Typ.IsPublic || Typ.IsAbstract)
+				return;
+
+			Debug("Adding type " + Typ.Name);
+
+			foreach (var Method in Typ.GetMethods())
+			{
+				// We skip private methods for privacy, abstract/nonstatic/constructor/generic methods for convenience
+				// Also, properties because exposing those is plain silly
+				if (Method.IsPrivate || Method.IsAbstract || Method.IsConstructor || !Method.IsStatic || Method.IsGenericMethod ||
+				   Method.Name.StartsWith("get_") || Method.Name.StartsWith("set_"))
+					continue;
+
+				Methods.Add(Method);
+			}
+		}
+
+		[Conditional("DEBUG")]
+		private void Debug(string message)
+		{
+			Console.WriteLine(message);
+		}
+
+		public void Save()
+		{
+			if (Mirror != null)
+				Mirror.Complete();
+
+			ABuilder.Save(AName.Name);
+		}
+	}
 }

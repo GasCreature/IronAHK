@@ -2,5 +2,7 @@
 
 namespace IronAHK.Scripting
 {
-    public partial class Script : Core { }
+	public partial class Script : Core
+	{
+	}
 }
