@@ -21,11 +21,13 @@ namespace IronAHK.Rusty.Linux
 			XConn.OnEvent += HandleXEvent;
 		}
 
+#pragma warning disable 612, 618
 		private void HandleXEvent(XEvent Event)
 		{
 			if (Event.type == XEventName.KeyPress || Event.type == XEventName.KeyRelease)
 				KeyReceived(TranslateKey(Event), Event.type == XEventName.KeyPress);
 		}
+#pragma warning restore 612, 618
 
 		protected override void DeregisterHook()
 		{
