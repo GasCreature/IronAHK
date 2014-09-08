@@ -139,7 +139,7 @@ namespace IronAHK.Rusty
 
 						var screen = Screen.PrimaryScreen.Bounds;
 
-						if (location == null)
+						if (location.IsEmpty)
 							center = true;
 
 						if (center)
